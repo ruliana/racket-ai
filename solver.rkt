@@ -24,12 +24,17 @@
                    (step-cost problem parent-state action)))
   (node nstate parent action ncost))
 
-(define (make-heap-queue cost-proc . elements)
-  (define (node<=? cost-proc)
-    (define (sum-cost a-node) (+ (cost-proc (node-state a-node))
+(define (make-heap-queue heuristic-proc . elements)
+  (define (node<=? heuristic-proc)
+    (define (sum-cost a-node) (+ (heuristic-proc (node-state a-node))
                                  (node-cost a-node)))
     (λ elements (apply <= (map sum-cost elements))))
-  (define h (make-heap (node<=? cost-proc)))
+  (define (node-better<=? heuristic-proc)
+    (define (tuple a-node) (list (+ (n-cost a-node) (h-cost a-node)) (h-cost a-node)))
+    (define (n-cost a-node) (node-cost a-node))
+    (define (h-cost a-node) (heuristic-proc (node-state a-node)))
+    (λ elements (apply andmap <= (map tuple elements))))
+  (define h (make-heap (node<=? heuristic-proc)))
   (define (zip a b) (map cons a b))
   (define nodes (map make-node elements))
   (heap-add-all! h nodes)
@@ -40,7 +45,8 @@
   (member? node-queue element)
   (pop node-queue)
   (peek node-queue)
-  (append node-queue . elements))
+  (append node-queue . elements)
+  (size node-queue))
 
 (struct heap-queue (hash heap)
   #:transparent
@@ -84,7 +90,8 @@
      (define hp (heap-copy (heap-queue-heap q)))
      (heap-remove-all! hp removable)
      (heap-add-all! hp addable)
-     (heap-queue more-hh hp))])
+     (heap-queue more-hh hp))
+   (define (size q) (hash-count (heap-queue-hash q)))])
 
 (module+ test
   (define (fixed-cost x) x)
@@ -121,7 +128,8 @@
   (goal? problem state))
 
 (define (solver-a* problem initial-state)
-  (define (search-fringe fringe visited)
+  (define initial-heap (make-heap-queue (curry heuristic-cost problem) initial-state))
+  (define (search-fringe fringe visited steps)
     (define a-node (peek fringe))
     (define rest (pop fringe))
     (define this-state (node-state a-node))
@@ -132,10 +140,19 @@
                           (map make-child)
                           (filter not-visited?)))
     (define new-fringe (apply append rest children))
+    (let ([cost (node-cost a-node)]
+          [heuristic (heuristic-cost problem this-state)]
+          [fringe-size (size new-fringe)])
+      (printf "~a) cost: ~a + ~a = ~a fringe: ~a\n"
+              steps
+              cost
+              heuristic
+              (+ cost heuristic)
+              fringe-size))
     (cond
       [(empty? fringe) #f]
       [(goal? problem this-state) a-node]
-      [else (search-fringe new-fringe new-visited)]))
-  (search-fringe (make-heap-queue (curry heuristic-cost problem) initial-state) (set)))
+      [else (search-fringe new-fringe new-visited (add1 steps))]))
+  (search-fringe initial-heap (set) 1))
 
 

@@ -119,11 +119,11 @@
     (string-join (build-list width (λ (x) middle))
                  connector
                  #:before-first left #:after-last right))
-  (define (make-top width)    (make-sep width "═"   "╔═" "═╦═" "═╗\n"))
-  (define (make-inter width)  (make-sep width "═" "\n╠═" "═╬═" "═╣\n"))
-  (define (make-bottom width) (make-sep width "═" "\n╚═" "═╩═" "═╝"))
+  (define (make-top width)    (make-sep width "══"   "╔═" "═╦═" "═╗\n"))
+  (define (make-inter width)  (make-sep width "══" "\n╠═" "═╬═" "═╣\n"))
+  (define (make-bottom width) (make-sep width "══" "\n╚═" "═╩═" "═╝"))
   (define (format-number n)
-    (if (zero? n) " " (~a n)))
+    (if (zero? n) "  " (~r n #:min-width 2)))
   (let loop ([rslt '()]
              [ns (vector->list numbers)])
     (if (empty? ns) (string-join (reverse rslt)

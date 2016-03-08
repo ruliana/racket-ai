@@ -24,9 +24,11 @@
       (display-node a-node)))
   (loop node))
 
-(define x (make-tile-random 3))
+(define x (make-tile '(6 0 8 7 2 5 3 4 1)))
 (define-values (rslt cpu-time real-time gc-time)
   (time-apply solver-a* (list (tiles-problem) x)))
 
+(define solution (car rslt))
+
+(display-solution solution)
 (printf "cpu: ~ams real: ~ams gc: ~ams\n" cpu-time real-time gc-time)
-(display-solution (car rslt))
